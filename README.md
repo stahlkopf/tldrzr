@@ -5,6 +5,9 @@ Author: Saurav Mohapatra (mohaps@gmail.com)
 Copyright (c) 2013, Saurav Mohapatra
 All rights reserved.
 
+## Notes on this fork
+I made a couple of simple amendments to the original repo to use it for http://www.mosttalked.com/, please see the commits.
+
 ## License
 
 Redistribution and use in source and binary forms, with or without modification, are permitted 

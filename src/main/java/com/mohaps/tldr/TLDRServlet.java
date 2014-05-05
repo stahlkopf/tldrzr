@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
 import org.jsoup.Jsoup;
 
 import com.mohaps.tldr.summarize.Defaults;
@@ -87,16 +88,8 @@ public class TLDRServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		String pathInfo = req.getPathInfo();
-		if (pathInfo != null && pathInfo.startsWith("/text")) {
-			handleSummarizeTextCall(req, resp);
-		} else if (pathInfo != null && pathInfo.startsWith("/feed")) {
-			handleSummarizeFeedCall(req, resp);
-		} else if (pathInfo != null && pathInfo.startsWith("/api")) {
-			handleAPICall(req, resp);
-		} else {
-			resp.sendError(404, "could not locate POST endpoint " + pathInfo);
-		}
+
+        handleSummarizeFeedCall(req, resp);
 	}
 
 	// show the home page
@@ -127,8 +120,8 @@ public class TLDRServlet extends HttpServlet {
 			try {
 				if(inputText == null || inputText.length() == 0){ summaryText = ""; }
 				else {
-				summaryText = Factory.getSummarizer().summarize(inputText,
-						sentenceCount);
+//				summaryText = Factory.getSummarizer().summarize(inputText,
+//						sentenceCount);
 				}
 			} catch (Exception ex) {
 				throw new IOException("Failed to summarize", ex);
@@ -156,20 +149,20 @@ public class TLDRServlet extends HttpServlet {
 	protected void handleSummarizeFeedCall(HttpServletRequest req,
 			HttpServletResponse resp) throws ServletException, IOException {
 
-		String feedUrl = req.getParameter("feed_url");
-		summarizeFeedUrl(feedUrl, req, resp);
+		String url = req.getParameter("url");
+		summarizeFeedUrl(url, req, resp);
 	}
 
 
 	// summarize a feed from a url (if the url is non feed, then try to extract article text)
-	protected void summarizeFeedUrl(String feedUrl, HttpServletRequest req,
+	protected void summarizeFeedUrl(String url, HttpServletRequest req,
 			HttpServletResponse resp) throws ServletException, IOException {
 
-		String contentType = Feeds.getContentType(feedUrl);
+		String contentType = Feeds.getContentType(url);
 		if (contentType != null
 				&& (contentType.startsWith("text/html") || contentType
 						.startsWith("text/plain"))) {
-			summarizePageText(feedUrl, req, resp);
+			summarizePageText(url, req, resp);
 		} else {
 			String scStr = req.getParameter("sentence_count");
 			int sentenceCount = scStr == null?Defaults.MAX_SENTENCES:Integer.parseInt(scStr);
@@ -178,10 +171,11 @@ public class TLDRServlet extends HttpServlet {
 			long start = System.currentTimeMillis();
 			long millis = 0;
 			try {
-				List<Feeds.Item> feedItems = Feeds.fetchFeedItems(feedUrl);
+				List<Feeds.Item> feedItems = Feeds.fetchFeedItems(url);
 				for (Item item : feedItems) {
-					String summary = Factory.getSummarizer().summarize(
-							item.getText(), sentenceCount);
+//					String summary = Factory.getSummarizer().summarize(
+//							item.getText(), sentenceCount);
+                    String summary = "";
 					// TODO: (mohaps) hook up keywords after stem word fix (currently working on this)
 					// might have to wait till I get topic modelling integrated till I turn this back on
 
@@ -194,11 +188,11 @@ public class TLDRServlet extends HttpServlet {
 				}
 			} catch (Exception ex) {
 				throw new IOException("Failed to summarize feed url : "
-						+ feedUrl, ex);
+						+ url, ex);
 			} finally {
 				millis = System.currentTimeMillis() - start;
 			}
-			SummarizedFeed summarizedFeed = new SummarizedFeed(feedUrl,
+			SummarizedFeed summarizedFeed = new SummarizedFeed(url,
 					entries, millis);
 			req.setAttribute("summarized_feed", summarizedFeed);
 			req.getRequestDispatcher("/feed_summary.jsp").forward(req, resp);
@@ -226,24 +220,28 @@ public class TLDRServlet extends HttpServlet {
 			HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 
-		String summaryText = null;
+		String[] summarySentences = new String[sentenceCount];
 		long start = System.currentTimeMillis();
 		long millis = 0;
+
 		try {
-			summaryText = Factory.getSummarizer().summarize(inputText,
+            summarySentences = Factory.getSummarizer().summarize(inputText,
 					sentenceCount);
 		} catch (Exception ex) {
+            ex.printStackTrace();
 			throw new IOException("Failed to summarize", ex);
 		} finally {
 			millis = System.currentTimeMillis() - start;
 		}
-		Summary summary = new Summary(inputText, summaryText,
-				sentenceCount, millis);
-		req.setAttribute("summary", summary);
+
+        Gson gson = new Gson();
+		req.setAttribute("summary", gson.toJson(summarySentences));
+
 		if(inputUrl != null) {
 			req.setAttribute("summary_url", inputUrl);
 		}
-		req.getRequestDispatcher("/text_summary.jsp").forward(req, resp);
+
+        req.getRequestDispatcher("/summary_in_json.jsp").forward(req, resp);
 	}
 
 	// handle a summarize text call from the web

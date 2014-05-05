@@ -49,8 +49,8 @@ public interface ISummarizer {
 	 * @return
 	 * @throws Exception
 	 */
-	String summarize(final String input, int sentenceCount, int maxFrequentWords, boolean shouldIgnoreSingleOccurences) throws Exception;
-	String summarize(String input, int sentenceCount) throws Exception;
+	String[] summarize(final String input, int sentenceCount, int maxFrequentWords, boolean shouldIgnoreSingleOccurences) throws Exception;
+	String[] summarize(String input, int sentenceCount) throws Exception;
 	
 	/**
 	 * WIP: extract keywords from a given input text

@@ -242,7 +242,8 @@ public class TLDRServlet extends HttpServlet {
 			req.setAttribute("summary_url", inputUrl);
 		}
 
-        resp.setContentType("application/json");
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
         out.print(gson.toJson(summarySentences));
         out.flush(); // response is streamed now, here

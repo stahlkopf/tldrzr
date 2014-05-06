@@ -33,6 +33,7 @@
 package com.mohaps.tldr;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -241,7 +242,10 @@ public class TLDRServlet extends HttpServlet {
 			req.setAttribute("summary_url", inputUrl);
 		}
 
-        req.getRequestDispatcher("/summary_in_json.jsp").forward(req, resp);
+        resp.setContentType("application/json");
+        PrintWriter out = resp.getWriter();
+        out.print(gson.toJson(summarySentences));
+        out.flush(); // response is streamed now, here
 	}
 
 	// handle a summarize text call from the web
